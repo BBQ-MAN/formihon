@@ -35,9 +35,9 @@ android {
 dependencies {
     implementation(kotlin("stdlib"))
     
-    // Core Tachiyomi API stubs (Provided by the host app)
-    compileOnly("eu.kanade.tachiyomi.lib:core:1.4")
-    compileOnly("eu.kanade.tachiyomi:extension-api:1.4")
+    // Core Tachiyomi API stubs
+    compileOnly("org.tachiyomi:source-api:1.1")
+    compileOnly("uy.kohesive.injekt:injekt-core:1.16.1")
 
     // RxJava & Coroutines
     compileOnly("io.reactivex:rxjava:1.3.8")
