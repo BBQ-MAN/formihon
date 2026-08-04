@@ -33,7 +33,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     
     // Core Tachiyomi API stubs
-    compileOnly("com.github.keiyoushi:extensions-lib:6e0c96cea8")
+    compileOnly("com.github.keiyoushi:extensions-lib:18a8e26be2")
     compileOnly("com.github.null2264.injekt:injekt-core:4135455a2a")
 
     // RxJava & Coroutines
