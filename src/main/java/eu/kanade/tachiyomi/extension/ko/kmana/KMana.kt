@@ -47,7 +47,7 @@ class KMana : ParsedHttpSource() {
     override fun popularMangaFromElement(element: Element): SManga {
         return SManga.create().apply {
             title = element.select("h3").text().trim()
-            setUrlWithoutDomain(element.attr("href"))
+            url = element.attr("href")
             thumbnail_url = element.select(".mLazyImgPlaceholder, img").let {
                 it.attr("data-src").ifEmpty { it.attr("src") }
             }.let {
@@ -100,7 +100,7 @@ class KMana : ParsedHttpSource() {
     override fun chapterFromElement(element: Element): SChapter {
         return SChapter.create().apply {
             name = element.select("h5").text().trim()
-            setUrlWithoutDomain(element.attr("href"))
+            url = element.attr("href")
             val dateStr = element.select(".view_date_item").firstOrNull()?.text()
             // Date mapping logic can be improved here
         }
