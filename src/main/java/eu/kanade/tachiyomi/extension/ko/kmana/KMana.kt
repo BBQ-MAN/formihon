@@ -2,14 +2,14 @@ package eu.kanade.tachiyomi.extension.ko.kmana
 
 import android.app.Application
 import android.content.SharedPreferences
-import android.widget.Toast
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.online.ParsedHttpSource
+import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.util.asJsoup
 import okhttp3.Headers
 import okhttp3.Request
 import okhttp3.Response
@@ -19,8 +19,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.regex.Pattern
 
-class KMana : ParsedHttpSource() {
-
+class KMana : HttpSource() {
     override val name = "K만화 (KMana)"
     override val lang = "ko"
     override val supportsLatest = true
@@ -42,72 +41,66 @@ class KMana : ParsedHttpSource() {
     override fun popularMangaRequest(page: Int): Request =
         GET("$baseUrl/today100?page=$page", headers)
 
-    override fun popularMangaSelector() = ".mSearchListContainer a.item, .item_grid a.item"
-
-    override fun popularMangaFromElement(element: Element): SManga {
-        return SManga.create().apply {
-            title = element.select("h3").text().trim()
-            url = element.attr("href")
-            thumbnail_url = element.select(".mLazyImgPlaceholder, img").let {
-                it.attr("data-src").ifEmpty { it.attr("src") }
-            }.let {
-                if (it.startsWith("//")) "https:$it" else it
+    override fun popularMangaParse(response: Response): MangasPage {
+        val document = response.asJsoup()
+        val mangas = document.select(".mSearchListContainer a.item, .item_grid a.item").map { element ->
+            SManga.create().apply {
+                title = element.select("h3").text().trim()
+                url = element.attr("href")
+                thumbnail_url = element.select(".mLazyImgPlaceholder, img").let {
+                    it.attr("data-src").ifEmpty { it.attr("src") }
+                }.let {
+                    if (it.startsWith("//")) "https:$it" else it
+                }
             }
         }
+        val hasNextPage = document.select(".m-pagination a.next").isNotEmpty()
+        return MangasPage(mangas, hasNextPage)
     }
-
-    override fun popularMangaNextPageSelector() = ".m-pagination a.next"
 
     // =============================== Latest ===============================
     override fun latestUpdatesRequest(page: Int): Request =
         GET("$baseUrl/latest?page=$page", headers)
 
-    override fun latestUpdatesSelector() = popularMangaSelector()
-
-    override fun latestUpdatesFromElement(element: Element): SManga =
-        popularMangaFromElement(element)
-
-    override fun latestUpdatesNextPageSelector() = popularMangaNextPageSelector()
-
-    // =============================== Search ===============================
-    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request {
-        return GET("$baseUrl/search?key=$query&page=$page", headers)
+    override fun latestUpdatesParse(response: Response): MangasPage {
+        return popularMangaParse(response) // reusing logic since selector is same
     }
 
-    override fun searchMangaSelector() = popularMangaSelector()
+    // =============================== Search ===============================
+    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request =
+        GET("$baseUrl/search?key=$query&page=$page", headers)
 
-    override fun searchMangaFromElement(element: Element): SManga =
-        popularMangaFromElement(element)
-
-    override fun searchMangaNextPageSelector() = popularMangaNextPageSelector()
+    override fun searchMangaParse(response: Response): MangasPage {
+        return popularMangaParse(response) // reusing logic since selector is same
+    }
 
     // =========================== Manga Details ============================
-    override fun mangaDetailsParse(document: Document): SManga {
+    override fun mangaDetailsParse(response: Response): SManga {
+        val document = response.asJsoup()
         return SManga.create().apply {
             title = document.select(".m-detail-viewbox-tit h1").text().trim()
             thumbnail_url = document.select(".mToonImageContainer img, .viewinfo img").firstOrNull()?.let {
                 val url = it.attr("data-src").ifEmpty { it.attr("src") }
                 if (url.startsWith("//")) "https:$url" else url
             }
-            // Add custom description / genre extraction if available on the detail page
         }
     }
 
     // ============================== Chapters ==============================
-    // Kmana shows chapters on the episode listing or inside the detail page.
-    override fun chapterListSelector() = "a.mEpisodeItem"
-
-    override fun chapterFromElement(element: Element): SChapter {
-        return SChapter.create().apply {
-            name = element.select("h5").text().trim()
-            url = element.attr("href")
-            val dateStr = element.select(".view_date_item").firstOrNull()?.text()
-            // Date mapping logic can be improved here
+    override fun chapterListParse(response: Response): List<SChapter> {
+        val document = response.asJsoup()
+        return document.select("a.mEpisodeItem").map { element ->
+            SChapter.create().apply {
+                name = element.select("h5").text().trim()
+                url = element.attr("href")
+                val dateStr = element.select(".view_date_item").firstOrNull()?.text()
+            }
         }
     }
 
     // =============================== Pages ================================
-    override fun pageListParse(document: Document): List<Page> {
+    override fun pageListParse(response: Response): List<Page> {
+        val document = response.asJsoup()
         val html = document.html()
 
         val folderMatcher = Pattern.compile("const folder = \"([^\"]+)\"").matcher(html)
@@ -118,8 +111,7 @@ class KMana : ParsedHttpSource() {
         val folder2 = if (folder2Matcher.find()) folder2Matcher.group(1) else ""
         val urlsStr = if (urlsMatcher.find()) urlsMatcher.group(1) else ""
 
-        val imageCdnDomain = "https://smallimage.11toon8.com/data/toon" 
-        // Note: The CDN domain may be dynamically fetched or fallback logic used.
+        val imageCdnDomain = "https://smallimage.11toon8.com/data/toon"
 
         if (urlsStr.isNullOrEmpty()) {
             throw Exception("Failed to find image URLs in the page script.")
@@ -131,7 +123,7 @@ class KMana : ParsedHttpSource() {
         }
     }
 
-    override fun imageUrlParse(document: Document): String = ""
+    override fun imageUrlParse(response: Response): String = ""
 
     companion object {
         private const val BASE_URL_PREF = "overrideBaseUrl"
