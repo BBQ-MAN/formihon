@@ -36,8 +36,8 @@ dependencies {
     implementation(kotlin("stdlib"))
     
     // Core Tachiyomi API stubs
-    compileOnly("org.tachiyomi:source-api:1.1")
-    compileOnly("uy.kohesive.injekt:injekt-core:1.16.1")
+    compileOnly("com.github.keiyoushi:extensions-lib:6e0c96cea8")
+    compileOnly("com.github.null2264.injekt:injekt-core:4135455a2a")
 
     // RxJava & Coroutines
     compileOnly("io.reactivex:rxjava:1.3.8")
