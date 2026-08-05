@@ -1,0 +1,28 @@
+{
+  "name": "KMana Extension Repository",
+  "badgeLabel": "KMana",
+  "signingKey": "183cd3f079a0a2de3440d89e2f3b99efca374cac7315564d992a1045876e168e",
+  "extensionList": {
+    "extensions": [
+      {
+        "name": "K만화 (KMana)",
+        "packageName": "eu.kanade.tachiyomi.extension.ko.kmana",
+        "resources": {
+          "apkUrl": "https://raw.githubusercontent.com/BBQ-MAN/formihon/gh-pages/kmana-extension-release.apk"
+        },
+        "extensionLib": "6e0c96cea8",
+        "versionCode": 1,
+        "versionName": "1.0",
+        "contentWarning": "SAFE",
+        "sources": [
+          {
+            "id": 5769549787447829926,
+            "name": "K만화 (KMana)",
+            "language": "ko",
+            "homeUrl": "https://kmana10.net"
+          }
+        ]
+      }
+    ]
+  }
+}
