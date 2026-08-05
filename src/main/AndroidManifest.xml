@@ -2,16 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="eu.kanade.tachiyomi.extension.ko.kmana">
 
-    <application>
+    <uses-feature android:name="tachiyomi.extension" />
+    
+    <application
+        android:allowBackup="false"
+        android:label="Tachiyomi: K만화 (KMana)">
         <meta-data
             android:name="tachiyomi.extension"
             android:value="true" />
         <meta-data
             android:name="tachiyomi.extension.class"
             android:value="eu.kanade.tachiyomi.extension.ko.kmana.KMana" />
-        <meta-data
-            android:name="tachiyomi.extension.factory"
-            android:value="" />
         <meta-data
             android:name="tachiyomi.extension.nsfw"
             android:value="0" />
